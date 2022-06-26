@@ -1,4 +1,5 @@
 import os
+from multiprocessing import Process
 
 from kivy.core.window import Window
 from kivymd.app import MDApp
@@ -9,14 +10,13 @@ from kivy.metrics import dp
 from kivy.lang.builder import Builder
 from kivy.uix.screenmanager import Screen, ScreenManager
 
-from multiprocessing import Process
-
-import ctypes as C
+from threading import Thread
 
 import Cam
 import GuiKV
 import DataHandler
 import Plotter
+import SnapSaveImage
 
 
 class Main(Screen):
@@ -40,7 +40,7 @@ class App(MDApp):
         self.data_handler = DataHandler.DataHandler()
 
         #   Create Camera Object:
-        self.camera = Cam.Camera()
+        self.camera = Cam.Camera(self.plotter)
 
         line_style_menu_items = [
             {
@@ -133,17 +133,18 @@ class App(MDApp):
 
     def start_data_acquisition(self):
         try:
-            plot_process = Process(target=self.plotter.plot_analog_input())
-            record_process = Process(target=self.camera.record_camera())
+            plot_process = Process(target=self.plotter.plot_analog_input)
+            record_process = Process(target=self.camera.repeated_snap_save, args=(self.data_handler.directory, ))
 
             plot_process.start()
             record_process.start()
 
-        except:
-            self.error_message("Camera or input signal not connected or configured.")
+        except Exception as e:
+            self.error_message(str(e))
 
     def test_analog_input(self):
-        self.plotter.plot_analog_input()
+        plot_analog_input_thread = Thread(target=self.plotter.plot_analog_input())
+        plot_analog_input_thread.start()
 
     def set_line_style(self, line_style):
         """
