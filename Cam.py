@@ -26,12 +26,14 @@ class Camera:
         self.snapsink = TIS.Imaging.FrameSnapSink(TIS.Imaging.MediaSubtypes.RGB32)
         self.ic.Sink = self.snapsink
 
+        self.cam_on = False
 
     def configure_camera(self):
         os.system('py CameraConfiguration.py')
 
     def repeated_snap_save(self, directory):
         self.ic.LiveDisplay = True
+        self.cam_on = True
 
         # Try to open the last used video capture device.
         try:
@@ -52,7 +54,7 @@ class Camera:
 
         img_num = 0
         if directory != "":
-            while True:
+            while self.cam_on:
                 frame = self.snapsink.SnapSingle(TimeSpan.FromSeconds(5))
                 frame_name = "CAM/image0" + str(img_num) + ".jpg"
                 img_num += 1
@@ -62,7 +64,7 @@ class Camera:
                 # Call draw Method to add 2D graphics in an image
                 I1 = ImageDraw.Draw(img)
 
-                text = "y = " + str(self.plotter.get_current_y()) + ", t = " + str(self.plotter.get_current_t())
+                text = "true_amplitude = " + str(self.plotter.get_current_amplitudes()) + ", true_time = " + str(self.plotter.get_current_time())
                 # Add Text to an image
                 I1.text((28, 36), text, fill=(255, 0, 0))
 

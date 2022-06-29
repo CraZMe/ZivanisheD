@@ -18,7 +18,6 @@ import DataHandler
 import Plotter
 import SnapSaveImage
 
-
 class Main(Screen):
     pass
 
@@ -41,6 +40,8 @@ class App(MDApp):
 
         #   Create Camera Object:
         self.camera = Cam.Camera(self.plotter)
+
+        self.current_channel = 1
 
         line_style_menu_items = [
             {
@@ -111,13 +112,7 @@ class App(MDApp):
                 "viewclass": "OneLineListItem",
                 "text": "Yellow",
                 "height": dp(56),
-                "on_release": lambda x='y': self.set_line_color(x)
-            },
-            {
-                "viewclass": "OneLineListItem",
-                "text": "Black",
-                "height": dp(56),
-                "on_release": lambda x='b': self.set_line_color(x)
+                "on_release": lambda x='true_amplitude': self.set_line_color(x)
             }
         ]
         self.line_color_menu = MDDropdownMenu(
@@ -153,7 +148,7 @@ class App(MDApp):
         '-', '--', 'o', 'd'.
         :return: None
         """
-        self.plotter.line_style = line_style
+        self.plotter.line_style[self.current_channel] = line_style
         self.screen.ids.line_style.set_item("Line Style [" + line_style + "]")
         self.line_style_menu.dismiss()
 
@@ -163,7 +158,8 @@ class App(MDApp):
         :param style: The TextField object.
         :return: None
         """
-        self.plotter.line_width = float(line_width_TextField.text)
+        self.plotter.line_width[self.current_channel] = float(line_width_TextField.text)
+        self.ButtonAction_work_on_channel(self.current_channel)
 
     def set_line_color(self, line_color):
         """
@@ -172,7 +168,7 @@ class App(MDApp):
                 '-', '--', 'o', 'd'.
                 :return: None
         """
-        self.plotter.line_color = line_color
+        self.plotter.line_color[self.current_channel] = line_color
         self.screen.ids.line_color.set_item("Line Color [" + line_color + "]")
         self.line_color_menu.dismiss()
 
@@ -206,6 +202,23 @@ class App(MDApp):
 
     def ButtonAction_start_recording(self):
         self.start_data_acquisition()
+        self.screen.ids.start_recording.on_release = lambda x: self.ButtonAction_stop_recording()
+        self.screen.ids.start_recording.tooltip_text = "Stop Recording"
+
+    def ButtonAction_work_on_channel(self, channel):
+        self.current_channel = channel
+        self.screen.ids.line_color.set_item("Line Color [" + self.plotter.line_color[channel] + "]")
+        self.screen.ids.line_style.set_item("Line Style [" + self.plotter.line_style[channel] + "]")
+        self.screen.ids.line_width.hint_text = 'Line Width: ' + str(self.plotter.line_width[channel])
+
+    def ButtonAction_stop_recording(self):
+        self.plotter.figure_on = False
+        self.camera.cam_on = False
+        self.screen.ids.start_recording.on_release = lambda x: self.ButtonAction_start_recording()
+        self.screen.ids.start_recording.tooltip_text = "Start Recording"
+
+    def ButtonAction_save_to_csv(self):
+        self.plotter.save_to_csv(self.data_handler.directory)
 
 
 if __name__ == '__main__':
